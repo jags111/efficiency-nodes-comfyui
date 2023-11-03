@@ -190,6 +190,8 @@ def print_loaded_objects_entries(id=None, prompt=None, show_id=False):
 
 # This function cleans global variables associated with nodes that are no longer detected on UI
 def globals_cleanup(prompt):
+    if not prompt:
+        return
     global loaded_objects
     global last_helds
 
