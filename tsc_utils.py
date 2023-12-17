@@ -226,6 +226,34 @@ def load_checkpoint(ckpt_name, id, output_vae=True, cache=None, cache_overwrite=
     if ckpt_type not in ["ckpt", "refn"]:
         raise ValueError(f"Invalid checkpoint type: {ckpt_type}")
 
+    if os.path.isabs(ckpt_name):
+        ckpt_path = ckpt_name
+    else:
+        ckpt_path = folder_paths.get_full_path("checkpoints", ckpt_name)
+
+    # If the checkpoint is using a config, skip cache and use old loading method.
+    if ckpt_config:
+        from comfy_extras.nodes_model_advanced import RescaleCFG
+
+        config_path = folder_paths.get_full_path("configs", ckpt_config[0])
+        rescale_value = ckpt_config[1]
+
+        with suppress_output():
+            # Use of deprecated function.
+            temp_out = comfy.sd.load_checkpoint(config_path, ckpt_path, output_vae, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
+
+        # Optional rescaling for the cfg of this model.
+        if rescale_value > 0:
+            rescale = RescaleCFG()
+            rescaled_model = rescale.patch(temp_out[0], ckpt_config[1])
+            out = (rescaled_model[0],) + temp_out[1:]
+        else:
+            out = temp_out
+
+        model, clip, vae = out[0], out[1], out[2]
+
+        return model, clip, vae
+
     for entry in loaded_objects[ckpt_type]:
         if entry[0] == ckpt_name:
             _, model, clip, vae, ids = entry
@@ -238,26 +266,8 @@ def load_checkpoint(ckpt_name, id, output_vae=True, cache=None, cache_overwrite=
 
             return model, clip, vae
 
-    if os.path.isabs(ckpt_name):
-        ckpt_path = ckpt_name
-    else:
-        ckpt_path = folder_paths.get_full_path("checkpoints", ckpt_name)
     with suppress_output():
-        if ckpt_config:
-            from comfy_extras.nodes_model_advanced import RescaleCFG
-            config_path = folder_paths.get_full_path("configs", ckpt_config[0])
-            rescale_value = ckpt_config[1];
-
-            # Soon to be deprecated function. Needs an alternative.
-            temp_out = comfy.sd.load_checkpoint(config_path, ckpt_path, output_vae, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
-            if rescale_value > 0:
-                rescale = RescaleCFG()
-                rescaled_model = rescale.patch(temp_out[0], ckpt_config[1])
-                out = (rescaled_model[0],) + temp_out[1:]
-            else:
-                out = temp_out
-        else:
-            out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
+        out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
 
     model = out[0]
     clip = out[1]
