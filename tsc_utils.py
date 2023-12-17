@@ -216,7 +216,7 @@ def globals_cleanup(prompt):
                     loaded_objects[key].remove(tup)
                     ###print(f'Deleted tuple at index {i} in {key} in loaded_objects because its id array became empty.')
 
-def load_checkpoint(ckpt_name, id, output_vae=True, cache=None, cache_overwrite=True, ckpt_type="ckpt"):
+def load_checkpoint(ckpt_name, id, output_vae=True, cache=None, cache_overwrite=True, ckpt_type="ckpt", ckpt_config=None):
     global loaded_objects
 
     # Create copies of the arguments right at the start
@@ -243,7 +243,16 @@ def load_checkpoint(ckpt_name, id, output_vae=True, cache=None, cache_overwrite=
     else:
         ckpt_path = folder_paths.get_full_path("checkpoints", ckpt_name)
     with suppress_output():
-        out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
+        if ckpt_config:
+            from comfy_extras.nodes_model_advanced import RescaleCFG
+            config_path = folder_paths.get_full_path("configs", ckpt_config[0])
+            # Soon to be deprecated function. Not sure about alternatives.
+            temp_out = comfy.sd.load_checkpoint(config_path, ckpt_path, output_vae, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
+            rescale = RescaleCFG()
+            rescaled_model = rescale.patch(temp_out[0], ckpt_config[1])
+            out = (rescaled_model[0],) + temp_out[1:]
+        else:
+            out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
 
     model = out[0]
     clip = out[1]

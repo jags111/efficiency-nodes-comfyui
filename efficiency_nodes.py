@@ -111,7 +111,8 @@ class TSC_EfficientLoader:
                               "empty_latent_height": ("INT", {"default": 512, "min": 64, "max": MAX_RESOLUTION, "step": 64}),
                               "batch_size": ("INT", {"default": 1, "min": 1, "max": 262144})},
                 "optional": {"lora_stack": ("LORA_STACK", ),
-                             "cnet_stack": ("CONTROL_NET_STACK",)},
+                             "cnet_stack": ("CONTROL_NET_STACK",),
+                             "ckpt_config": ("CKPT_CONFIG",)},
                 "hidden": { "prompt": "PROMPT",
                             "my_unique_id": "UNIQUE_ID",},
                 }
@@ -123,7 +124,7 @@ class TSC_EfficientLoader:
 
     def efficientloader(self, ckpt_name, vae_name, clip_skip, lora_name, lora_model_strength, lora_clip_strength,
                         positive, negative, token_normalization, weight_interpretation, empty_latent_width,
-                        empty_latent_height, batch_size, lora_stack=None, cnet_stack=None, refiner_name="None",
+                        empty_latent_height, batch_size, lora_stack=None, cnet_stack=None, ckpt_config=None, refiner_name="None",
                         ascore=None, prompt=None, my_unique_id=None, loader_type="regular"):
 
         # Clean globally stored objects
@@ -153,7 +154,7 @@ class TSC_EfficientLoader:
             if vae_name == "Baked VAE":
                 vae = get_bvae_by_ckpt_name(ckpt_name)
         else:
-            model, clip, vae = load_checkpoint(ckpt_name, my_unique_id, cache=ckpt_cache, cache_overwrite=True)
+            model, clip, vae = load_checkpoint(ckpt_name, my_unique_id, cache=ckpt_cache, cache_overwrite=True, ckpt_config=ckpt_config)
             lora_params = None
 
         # Load Refiner Checkpoint if given
@@ -280,6 +281,29 @@ class TSC_Pack_SDXL_Tuple:
                         refiner_model, refiner_clip, refiner_positive, refiner_negative):
         return ((base_model, base_clip, base_positive, base_negative,
                  refiner_model, refiner_clip, refiner_positive, refiner_negative),)
+
+########################################################################################################################
+# TSC Checkpoint Config
+class TSC_Ckpt_Config:
+    @classmethod
+    def INPUT_TYPES(cls):
+        configs = ["None"] + folder_paths.get_filename_list("configs")
+        inputs = {
+            "required": {
+                "ckpt_config": (configs,),
+                "rescale_config": ("FLOAT", {"default": -1.0, "min": -1.0, "max": 1.0, "step": 0.1}),
+            }
+        }
+
+        return inputs
+
+    RETURN_TYPES = ("CKPT_CONFIG",)
+    RETURN_NAMES = ("CKPT_CONFIG",)
+    FUNCTION = "ckpt_config"
+    CATEGORY = "Efficiency Nodes/Loaders"
+
+    def ckpt_config(self, ckpt_config, rescale_config, **kwargs):
+        return ((ckpt_config, rescale_config), )
 
 ########################################################################################################################
 # TSC LoRA Stacker
@@ -4150,6 +4174,7 @@ NODE_CLASS_MAPPINGS = {
     "KSampler SDXL (Eff.)": TSC_KSamplerSDXL,
     "Efficient Loader": TSC_EfficientLoader,
     "Eff. Loader SDXL": TSC_EfficientLoaderSDXL,
+    "Checkpoint Config": TSC_Ckpt_Config,
     "LoRA Stacker": TSC_LoRA_Stacker,
     "Control Net Stacker": TSC_Control_Net_Stacker,
     "Apply ControlNet Stack": TSC_Apply_ControlNet_Stack,
