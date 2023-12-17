@@ -246,12 +246,16 @@ def load_checkpoint(ckpt_name, id, output_vae=True, cache=None, cache_overwrite=
         if ckpt_config:
             from comfy_extras.nodes_model_advanced import RescaleCFG
             config_path = folder_paths.get_full_path("configs", ckpt_config[0])
+            rescale_value = ckpt_config[1];
 
             # Soon to be deprecated function. Needs an alternative.
             temp_out = comfy.sd.load_checkpoint(config_path, ckpt_path, output_vae, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
-            rescale = RescaleCFG()
-            rescaled_model = rescale.patch(temp_out[0], ckpt_config[1])
-            out = (rescaled_model[0],) + temp_out[1:]
+            if rescale_value > 0:
+                rescale = RescaleCFG()
+                rescaled_model = rescale.patch(temp_out[0], ckpt_config[1])
+                out = (rescaled_model[0],) + temp_out[1:]
+            else:
+                out = temp_out
         else:
             out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"))
 
