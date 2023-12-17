@@ -18,6 +18,7 @@ const NODE_COLORS = {
     "Efficient Loader": "random",
     "Eff. Loader SDXL": "random",
     "LoRA Stacker": "blue",
+    "Checkpoint Config": "blue",
     "Control Net Stacker": "green",
     "Apply ControlNet Stack": "none",
     "XY Plot": "purple",
