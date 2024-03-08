@@ -3963,22 +3963,6 @@ class TSC_Noise_Control_Script:
         script["noise"] = (rng_source, cfg_denoiser, add_seed_noise, seed, weight)
         return (script,)
 
-########################################################################################################################
-# Add controlnet options if have controlnet_aux installed (https://github.com/Fannovel16/comfyui_controlnet_aux)
-use_controlnet_widget = preprocessor_widget = (["_"],)
-if os.path.exists(os.path.join(custom_nodes_dir, "comfyui_controlnet_aux")):
-    printout = "Attempting to add Control Net options to the 'HiRes-Fix Script' Node (comfyui_controlnet_aux add-on)..."
-    #print(f"{message('Efficiency Nodes:')} {printout}", end="", flush=True)
-
-    try:
-        with suppress_output():
-            AIO_Preprocessor = getattr(import_module("comfyui_controlnet_aux.__init__"), 'AIO_Preprocessor')
-        use_controlnet_widget = ("BOOLEAN", {"default": False})
-        preprocessor_widget = AIO_Preprocessor.INPUT_TYPES()["optional"]["preprocessor"]
-        print(f"\r{message('Efficiency Nodes:')} {printout}{success('Success!')}")
-    except Exception:
-        print(f"\r{message('Efficiency Nodes:')} {printout}{error('Failed!')}")
-
 # TSC HighRes-Fix with model latent upscalers (https://github.com/city96/SD-Latent-Upscaler)
 class TSC_HighRes_Fix:
 
@@ -3998,6 +3982,21 @@ class TSC_HighRes_Fix:
 
     @classmethod
     def INPUT_TYPES(cls):
+        ########################################################################################################################
+        # Add controlnet options if have controlnet_aux installed (https://github.com/Fannovel16/comfyui_controlnet_aux)
+        use_controlnet_widget = preprocessor_widget = (["_"],)
+        if os.path.exists(os.path.join(custom_nodes_dir, "comfyui_controlnet_aux")):
+            printout = "Attempting to add Control Net options to the 'HiRes-Fix Script' Node (comfyui_controlnet_aux add-on)..."
+            #print(f"{message('Efficiency Nodes:')} {printout}", end="", flush=True)
+
+            try:
+                with suppress_output():
+                    AIO_Preprocessor = getattr(import_module("comfyui_controlnet_aux.__init__"), 'AIO_Preprocessor')
+                use_controlnet_widget = ("BOOLEAN", {"default": False})
+                preprocessor_widget = AIO_Preprocessor.INPUT_TYPES()["optional"]["preprocessor"]
+                print(f"\r{message('Efficiency Nodes:')} {printout}{success('Success!')}")
+            except Exception:
+                print(f"\r{message('Efficiency Nodes:')} {printout}{error('Failed!')}")
 
         return {"required": {"upscale_type": (["latent","pixel"],),
                              "hires_ckpt_name": (["(use same)"] + folder_paths.get_filename_list("checkpoints"),),
