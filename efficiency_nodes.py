@@ -3964,7 +3964,8 @@ class TSC_Noise_Control_Script:
         return (script,)
         
         
-
+########################################################################################################################
+use_controlnet_widget = None
 
 # TSC HighRes-Fix with model latent upscalers (https://github.com/city96/SD-Latent-Upscaler)
 class TSC_HighRes_Fix:
@@ -3983,12 +3984,9 @@ class TSC_HighRes_Fix:
     latent_upscalers = default_latent_upscalers + city96_upscale_methods + ttl_nn_upscale_methods
     pixel_upscalers = folder_paths.get_filename_list("upscale_models")
 
-    ########################################################################################################################
-    use_controlnet_widget = None
-
     @classmethod
     def INPUT_TYPES(cls):
-        
+        global use_controlnet_widget
         if use_controlnet_widget is None:
             # Add controlnet options if have controlnet_aux installed (https://github.com/Fannovel16/comfyui_controlnet_aux)
             if os.path.exists(os.path.join(custom_nodes_dir, "comfyui_controlnet_aux")):
