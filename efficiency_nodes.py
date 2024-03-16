@@ -545,7 +545,8 @@ class TSC_KSampler:
 
                     # Perform base model sampling
                     add_noise = return_with_leftover_noise = True
-                    samples = KSamplerAdvanced().sample(model, add_noise, seed, end_at_step, cfg, sampler_name, scheduler,
+                    base_steps = min(end_at_step, steps)
+                    samples = KSamplerAdvanced().sample(model, add_noise, seed, base_steps, cfg, sampler_name, scheduler,
                                                         positive, negative, latent_image, start_at_step, end_at_step,
                                                         return_with_leftover_noise, denoise=1.0)[0]
 
