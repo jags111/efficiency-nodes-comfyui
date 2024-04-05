@@ -360,7 +360,16 @@ def load_lora(lora_params, ckpt_name, id, cache=None, ckpt_cache=None, cache_ove
         else:
             lora_path = folder_paths.get_full_path("loras", lora_name)
 
-        lora_model, lora_clip = comfy.sd.load_lora_for_models(ckpt, clip, comfy.utils.load_torch_file(lora_path), strength_model, strength_clip)
+        try:
+            lora_model, lora_clip = comfy.sd.load_lora_for_models(
+                ckpt,
+                clip,
+                comfy.utils.load_torch_file(lora_path),
+                strength_model,
+                strength_clip,
+            )
+        except Exception as e:
+            raise ValueError("Error loading Lora file: {} \n{}".format(lora_name, e))
 
         # Call the function again with the new lora_model and lora_clip and the remaining tuples
         return recursive_load_lora(lora_params[1:], lora_model, lora_clip, id, ckpt_cache, cache_overwrite, folder_paths)
@@ -515,7 +524,7 @@ def set_preview_method(method):
 def global_preview_method():
     return args.preview_method
 
-#-----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------------
 # Delete efficiency nodes web extensions from 'ComfyUI\web\extensions'.
 # Pull https://github.com/comfyanonymous/ComfyUI/pull/1273 now allows defining web extensions through a dir path in init
 import shutil
@@ -527,7 +536,7 @@ destination_dir = os.path.join(comfy_dir, 'web', 'extensions', 'efficiency-nodes
 if os.path.exists(destination_dir):
     shutil.rmtree(destination_dir)
 
-#-----------------------------------------------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------------------
 # Other
 class XY_Capsule:
     def pre_define_model(self, model, clip, vae):
@@ -544,12 +553,3 @@ class XY_Capsule:
 
     def getLabel(self):
         return "Unknown"
-
-
-
-
-
-
-
-
-
