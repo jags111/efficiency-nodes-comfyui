@@ -1,0 +1,15 @@
+[project]
+name = "efficiency-nodes-comfyui"
+description = "Efficiency Nodes for ComfyUI Version 2.0 A collection of ComfyUI custom nodes to help streamline workflows and reduce total node count."
+version = "1.0.0"
+license = "LICENSE"
+dependencies = ["clip-interrogator", "simpleeval"]
+
+[project.urls]
+Repository = "https://github.com/jags111/efficiency-nodes-comfyui"
+
+[tool.comfy]
+PublisherId = "jags111"
+DisplayName = "efficiency-nodes-comfyui"
+Icon = "https://github.com/jags111/efficiency-nodes-comfyui/blob/main/images/jagsP1.png?raw=true"
+Models = [{location = "/checkpoints/model.safetensor", model_url = "https://example.com/model.zip"}]

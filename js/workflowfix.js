@@ -113,7 +113,7 @@ ext.loadedGraphNode = function(node, app) {
     else if (node.comfyClass === "HighRes-Fix Script") {
         const upscaleTypeWidget = node.widgets.find(w => w.name === "upscale_type");
         
-        if (upscaleTypeWidget && upscaleTypeWidget.value !== "latent" && upscaleTypeWidget.value !== "pixel") {
+        if (upscaleTypeWidget && upscaleTypeWidget.value !== "latent" && upscaleTypeWidget.value !== "pixel" && upscaleTypeWidget.value !== "both") {
             console.log("[EfficiencyUpdate]", "Reloading 'HighRes-Fix Script' node:", node);
 
             // Reload the node and get the new node instance
