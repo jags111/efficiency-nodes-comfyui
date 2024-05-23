@@ -1363,7 +1363,7 @@ class TSC_KSampler:
                     encode = True
 
                 # Load LoRA if required
-                elif (X_type == "LoRA" and index == 0):
+                elif (X_type == "LoRA"):
                     # Don't cache Checkpoints
                     model, clip = load_lora(lora_stack, ckpt_name, xyplot_id, cache=cache[2])
                     encode = True
