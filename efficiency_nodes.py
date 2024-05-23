@@ -1383,13 +1383,13 @@ class TSC_KSampler:
 
                 # Encode base prompt if required
                 encode_types = ["Positive Prompt S/R", "Negative Prompt S/R", "Clip Skip", "ControlNetStrength",
-                                "ControlNetStart%",  "ControlNetEnd%"]
+                                "ControlNetStart%",  "ControlNetEnd%", "XY_Capsule"]
                 if (X_type in encode_types and index == 0) or Y_type in encode_types:
                     encode = True
 
                 # Encode refiner prompt if required
                 encode_refiner_types = ["Positive Prompt S/R", "Negative Prompt S/R", "AScore+", "AScore-",
-                                        "Clip Skip (Refiner)"]
+                                        "Clip Skip (Refiner)", "XY_Capsule"]
                 if (X_type in encode_refiner_types and index == 0) or Y_type in encode_refiner_types:
                     encode_refiner = True
 
