@@ -18,6 +18,8 @@ import subprocess
 import json
 import psutil
 
+from comfy_extras.nodes_align_your_steps import AlignYourStepsScheduler
+
 # Get the absolute path of various directories
 my_dir = os.path.dirname(os.path.abspath(__file__))
 custom_nodes_dir = os.path.abspath(os.path.join(my_dir, '..'))
@@ -52,11 +54,16 @@ from .py import bnk_tiled_samplers
 from .py import bnk_adv_encode
 sys.path.remove(my_dir)
 
+from comfy import samplers
 # Append custom_nodes_dir to sys.path
 sys.path.append(custom_nodes_dir)
 
 # GLOBALS
 REFINER_CFG_OFFSET = 0 #Refiner CFG Offset
+
+# Monkey patch schedulers
+samplers.SCHEDULER_NAMES = samplers.SCHEDULER_NAMES + ["AYS SD1", "AYS SDXL", "AYS SVD"]
+samplers.KSampler.SCHEDULERS = samplers.KSampler.SCHEDULERS + ["AYS SD1", "AYS SDXL", "AYS SVD"]
 
 ########################################################################################################################
 # Common function for encoding prompts
@@ -394,7 +401,6 @@ class TSC_Apply_ControlNet_Stack:
 ########################################################################################################################
 # TSC KSampler (Efficient)
 class TSC_KSampler:
-    
     empty_image = pil2tensor(Image.new('RGBA', (1, 1), (0, 0, 0, 0)))
 
     @classmethod
@@ -428,6 +434,15 @@ class TSC_KSampler:
                preview_method, vae_decode, denoise=1.0, prompt=None, extra_pnginfo=None, my_unique_id=None,
                optional_vae=(None,), script=None, add_noise=None, start_at_step=None, end_at_step=None,
                return_with_leftover_noise=None, sampler_type="regular"):
+
+        # monkey patch the sample function
+        original_calculation = comfy.samplers.calculate_sigmas
+        def calculate_sigmas(model_sampling, scheduler_name: str, steps):
+            if scheduler_name.startswith("AYS"):
+                return AlignYourStepsScheduler().get_sigmas(scheduler_name.split(" ")[1], steps, denoise=1.0)[0]
+            return original_calculation(model_sampling, scheduler_name, steps)
+        comfy.samplers.SCHEDULER_NAMES = comfy.samplers.SCHEDULER_NAMES + ["AYS SD1", "AYS SDXL", "AYS SVD"]
+        comfy.samplers.calculate_sigmas = calculate_sigmas
 
         # Rename the vae variable
         vae = optional_vae
