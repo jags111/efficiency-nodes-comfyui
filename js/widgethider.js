@@ -610,6 +610,9 @@ app.registerExtension({
 
             // Store the original descriptor if it exists
             let originalDescriptor = Object.getOwnPropertyDescriptor(w, 'value');
+            if (!originalDescriptor) {
+                originalDescriptor = Object.getOwnPropertyDescriptor(w.constructor.prototype, 'value');
+            }
 
             widgetLogic(node, w);
 
