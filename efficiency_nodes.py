@@ -62,8 +62,8 @@ sys.path.append(custom_nodes_dir)
 REFINER_CFG_OFFSET = 0 #Refiner CFG Offset
 
 # Monkey patch schedulers
-samplers.SCHEDULER_NAMES = samplers.SCHEDULER_NAMES + ["AYS SD1", "AYS SDXL", "AYS SVD"]
-samplers.KSampler.SCHEDULERS = samplers.KSampler.SCHEDULERS + ["AYS SD1", "AYS SDXL", "AYS SVD"]
+SCHEDULER_NAMES = samplers.SCHEDULER_NAMES + ["AYS SD1", "AYS SDXL", "AYS SVD"]
+SCHEDULERS = samplers.KSampler.SCHEDULERS + ["AYS SD1", "AYS SDXL", "AYS SVD"]
 
 ########################################################################################################################
 # Common function for encoding prompts
@@ -411,7 +411,7 @@ class TSC_KSampler:
                      "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                      "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
                      "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
-                     "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                     "scheduler": (SCHEDULERS,),
                      "positive": ("CONDITIONING",),
                      "negative": ("CONDITIONING",),
                      "latent_image": ("LATENT",),
@@ -434,16 +434,7 @@ class TSC_KSampler:
                preview_method, vae_decode, denoise=1.0, prompt=None, extra_pnginfo=None, my_unique_id=None,
                optional_vae=(None,), script=None, add_noise=None, start_at_step=None, end_at_step=None,
                return_with_leftover_noise=None, sampler_type="regular"):
-
-        # monkey patch the sample function
-        original_calculation = comfy.samplers.calculate_sigmas
-        def calculate_sigmas(model_sampling, scheduler_name: str, steps):
-            if scheduler_name.startswith("AYS"):
-                return AlignYourStepsScheduler().get_sigmas(scheduler_name.split(" ")[1], steps, denoise=1.0)[0]
-            return original_calculation(model_sampling, scheduler_name, steps)
-        comfy.samplers.SCHEDULER_NAMES = comfy.samplers.SCHEDULER_NAMES + ["AYS SD1", "AYS SDXL", "AYS SVD"]
-        comfy.samplers.calculate_sigmas = calculate_sigmas
-
+        
         # Rename the vae variable
         vae = optional_vae
 
@@ -477,10 +468,21 @@ class TSC_KSampler:
                                 refiner_model, refiner_positive, refiner_negative, vae, vae_decode, preview_method):
 
             # Store originals
+            original_calculation = comfy.samplers.calculate_sigmas
+            original_KSampler_SCHEDULERS = comfy.samplers.KSampler.SCHEDULERS
             previous_preview_method = global_preview_method()
             original_prepare_noise = comfy.sample.prepare_noise
             original_KSampler = comfy.samplers.KSampler
             original_model_str = str(model)
+
+            # monkey patch the sample function
+            def calculate_sigmas(model_sampling, scheduler_name: str, steps):
+                if scheduler_name.startswith("AYS"):
+                    return AlignYourStepsScheduler().get_sigmas(scheduler_name.split(" ")[1], steps, denoise=1.0)[0]
+                return original_calculation(model_sampling, scheduler_name, steps)
+
+            comfy.samplers.KSampler.SCHEDULERS = SCHEDULERS
+            comfy.samplers.calculate_sigmas = calculate_sigmas
 
             # Initialize output variables
             samples = images = gifs = preview = cnet_imgs = None
@@ -713,6 +715,8 @@ class TSC_KSampler:
                 set_preview_method(previous_preview_method)
                 comfy.samplers.KSampler = original_KSampler
                 comfy.sample.prepare_noise = original_prepare_noise
+                comfy.samplers.calculate_sigmas = original_calculation
+                comfy.samplers.KSampler.SCHEDULERS = original_KSampler_SCHEDULERS
 
             return samples, images, gifs, preview
 
@@ -2193,7 +2197,7 @@ class TSC_KSamplerAdvanced(TSC_KSampler):
                      "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                      "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
                      "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
-                     "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                     "scheduler": (SCHEDULERS,),
                      "positive": ("CONDITIONING",),
                      "negative": ("CONDITIONING",),
                      "latent_image": ("LATENT",),
@@ -2235,7 +2239,7 @@ class TSC_KSamplerSDXL(TSC_KSampler):
                      "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
                      "cfg": ("FLOAT", {"default": 7.0, "min": 0.0, "max": 100.0}),
                      "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
-                     "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+                     "scheduler": (SCHEDULERS,),
                      "latent_image": ("LATENT",),
                      "start_at_step": ("INT", {"default": 0, "min": 0, "max": 10000}),
                      "refine_at_step": ("INT", {"default": -1, "min": -1, "max": 10000}),
@@ -2553,7 +2557,7 @@ class TSC_XYplot_Sampler_Scheduler:
     @classmethod
     def INPUT_TYPES(cls):
         samplers = ["None"] + comfy.samplers.KSampler.SAMPLERS
-        schedulers = ["None"] + comfy.samplers.KSampler.SCHEDULERS
+        schedulers = ["None"] + SCHEDULERS
         inputs = {
             "required": {
                 "target_parameter": (cls.parameters,),
@@ -3487,7 +3491,7 @@ class TSC_XYplot_Manual_XY_Entry_Info:
     @classmethod
     def INPUT_TYPES(cls):
         samplers = ";\n".join(comfy.samplers.KSampler.SAMPLERS)
-        schedulers = ";\n".join(comfy.samplers.KSampler.SCHEDULERS)
+        schedulers = ";\n".join(SCHEDULERS)
         vaes = ";\n".join(folder_paths.get_filename_list("vae"))
         ckpts = ";\n".join(folder_paths.get_filename_list("checkpoints"))
         loras = ";\n".join(folder_paths.get_filename_list("loras"))
@@ -3525,7 +3529,7 @@ class TSC_XYplot_Manual_XY_Entry:
     def xy_value(self, plot_type, plot_value):
 
         # Store X values as arrays
-        if plot_type not in {"Positive Prompt S/R", "Negative Prompt S/R", "VAE", "Checkpoint", "LoRA"}:
+        if plot_type not in {"Positive Prompt S/R", "Negative Prompt S/R", "VAE", "Checkpoint", "LoRA", "Scheduler"}:
             plot_value = plot_value.replace(" ", "")  # Remove spaces
         plot_value = plot_value.replace("\n", "")  # Remove newline characters
         plot_value = plot_value.rstrip(";")  # Remove trailing semicolon
@@ -3539,7 +3543,7 @@ class TSC_XYplot_Manual_XY_Entry:
             "EndStep": {"min": 0, "max": 10000},
             "CFG Scale": {"min": 0, "max": 100},
             "Sampler": {"options": comfy.samplers.KSampler.SAMPLERS},
-            "Scheduler": {"options": comfy.samplers.KSampler.SCHEDULERS},
+            "Scheduler": {"options": SCHEDULERS},
             "Denoise": {"min": 0, "max": 1},
             "VAE": {"options": folder_paths.get_filename_list("vae")},
             "Checkpoint": {"options": folder_paths.get_filename_list("checkpoints")},
