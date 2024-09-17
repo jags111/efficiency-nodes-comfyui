@@ -3892,13 +3892,13 @@ class TSC_ImageOverlay:
                 "overlay_image": ("IMAGE",),
                 "overlay_resize": (["None", "Fit", "Resize by rescale_factor", "Resize to width & heigth"],),
                 "resize_method": (["nearest-exact", "bilinear", "area"],),
-                "rescale_factor": ("FLOAT", {"default": 1, "min": 0.01, "max": 16.0, "step": 0.1}),
-                "width": ("INT", {"default": 512, "min": 0, "max": MAX_RESOLUTION, "step": 64}),
-                "height": ("INT", {"default": 512, "min": 0, "max": MAX_RESOLUTION, "step": 64}),
-                "x_offset": ("INT", {"default": 0, "min": -48000, "max": 48000, "step": 10}),
-                "y_offset": ("INT", {"default": 0, "min": -48000, "max": 48000, "step": 10}),
-                "rotation": ("INT", {"default": 0, "min": -180, "max": 180, "step": 5}),
-                "opacity": ("FLOAT", {"default": 0, "min": 0, "max": 100, "step": 5}),
+                "rescale_factor": ("FLOAT", {"default": 1, "min": 0.01, "max": 16.0, "step": 0.01}),
+                "width": ("INT", {"default": 512, "min": 0, "max": MAX_RESOLUTION, "step": 1}),
+                "height": ("INT", {"default": 512, "min": 0, "max": MAX_RESOLUTION, "step": 1}),
+                "x_offset": ("INT", {"default": 0, "min": -48000, "max": 48000, "step": 1}),
+                "y_offset": ("INT", {"default": 0, "min": -48000, "max": 48000, "step": 1}),
+                "rotation": ("INT", {"default": 0, "min": -180, "max": 180, "step": 0.1}),
+                "opacity": ("FLOAT", {"default": 0, "min": 0, "max": 100, "step": 0.1}),
             },
             "optional": {"optional_mask": ("MASK",),}
         }
@@ -3948,8 +3948,8 @@ class TSC_ImageOverlay:
             # Apply mask as overlay's alpha
             overlay_image.putalpha(ImageOps.invert(mask))
 
-        # Rotate the overlay image
-        overlay_image = overlay_image.rotate(rotation, expand=True)
+        # Rotate the overlay image with antialiasing
+        overlay_image = overlay_image.rotate(rotation, resample=Image.BICUBIC, expand=True)
 
         # Apply opacity on overlay image
         r, g, b, a = overlay_image.split()
@@ -3965,14 +3965,20 @@ class TSC_ImageOverlay:
             # Convert tensor to PIL Image
             image = tensor2pil(tensor)
 
-            # Paste the overlay image onto the base image
-            if mask is None:
-                image.paste(overlay_image, location)
-            else:
-                image.paste(overlay_image, location, overlay_image)
+            # Create a new blank image with an alpha channel
+            combined = Image.new('RGBA', image.size, (0, 0, 0, 0))
+
+            # Paste the base image onto the new image
+            combined.paste(image, (0, 0))
+
+            # Paste the overlay image onto the combined image using alpha compositing
+            combined.alpha_composite(overlay_image, location)
+
+            # Convert the combined image back to RGB mode
+            result = combined.convert('RGB')
 
             # Convert PIL Image back to tensor
-            processed_tensor = pil2tensor(image)
+            processed_tensor = pil2tensor(result)
 
             # Append to list
             processed_base_image_list.append(processed_tensor)
