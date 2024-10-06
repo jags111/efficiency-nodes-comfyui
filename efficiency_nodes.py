@@ -134,7 +134,8 @@ class TSC_EfficientLoader:
                         ascore=None, prompt=None, my_unique_id=None, loader_type="regular"):
 
         # Clean globally stored objects
-        globals_cleanup(prompt)
+        if prompt:
+            globals_cleanup(prompt)
 
         # Create Empty Latent
         latent = torch.zeros([batch_size, 4, empty_latent_height // 8, empty_latent_width // 8]).cpu()
@@ -722,7 +723,8 @@ class TSC_KSampler:
 
         # ---------------------------------------------------------------------------------------------------------------
         # Clean globally stored objects of non-existant nodes
-        globals_cleanup(prompt)
+        if prompt:
+            globals_cleanup(prompt)
 
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         # If not XY Plotting
