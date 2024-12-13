@@ -20,6 +20,9 @@ MAX_RESOLUTION=8192
 
 #######################
 
+def get_device():
+    return comfy.model_management.get_torch_device()
+
 def recursion_to_list(obj, attr):
     current = obj
     yield current
@@ -86,13 +89,13 @@ def slice_gligen(tile_h, tile_h_len, tile_w, tile_w_len, cond, gligen):
 def slice_cnet(h, h_len, w, w_len, model:comfy.controlnet.ControlBase, img):
     if img is None:
         img = model.cond_hint_original
-    model.cond_hint = tiling.get_slice(img, h*8, h_len*8, w*8, w_len*8).to(model.control_model.dtype).to(model.device)
+    model.cond_hint = tiling.get_slice(img, h*8, h_len*8, w*8, w_len*8).to(model.control_model.dtype).to(get_device())
 
 def slices_T2I(h, h_len, w, w_len, model:comfy.controlnet.ControlBase, img):
     model.control_input = None
     if img is None:
         img = model.cond_hint_original
-    model.cond_hint = tiling.get_slice(img, h*8, h_len*8, w*8, w_len*8).float().to(model.device)
+    model.cond_hint = tiling.get_slice(img, h*8, h_len*8, w*8, w_len*8).float().to(get_device())
 
 # TODO: refactor some of the mess
 
@@ -100,7 +103,7 @@ from PIL import Image
 
 def sample_common(model, add_noise, noise_seed, tile_width, tile_height, tiling_strategy, steps, cfg, sampler_name, scheduler, positive, negative, latent_image, start_at_step, end_at_step, return_with_leftover_noise, denoise=1.0, preview=False):
     end_at_step = min(end_at_step, steps)
-    device = comfy.model_management.get_torch_device()
+    device = get_device()
     samples = latent_image["samples"]
     noise_mask = latent_image["noise_mask"] if "noise_mask" in latent_image else None
     force_full_denoise = return_with_leftover_noise == "enable"
