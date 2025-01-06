@@ -1000,7 +1000,8 @@ class TSC_KSampler:
             # Special cases
             is_special_case = (
                     (X_type == "Refiner On/Off" and Y_type in ["RefineStep", "Steps"]) or
-                    (X_type == "Nothing" and Y_type != "Nothing")
+                    (X_type == "Nothing" and Y_type != "Nothing") or
+                    (Y_type == "LoRA Batch" and (X_type == "LoRA Wt" or X_type == "LoRA MStr" or X_type == "LoRA CStr"))
             )
 
             # Determine whether to flip
@@ -1705,6 +1706,11 @@ class TSC_KSampler:
                     # Check for all possible LoRA types
                     lora_types = ["LoRA", "LoRA Batch", "LoRA Wt", "LoRA MStr", "LoRA CStr"]
 
+                    def get_lora_name_for_weights(lora_path, lora_name):
+                        if lora_path:
+                            return os.path.basename(X_value[0][0][0]) if lora_name is None else lora_name
+                        return None
+
                     if X_type not in lora_types and Y_type not in lora_types:
                         if lora_stack:
                             names_list = []
@@ -1725,15 +1731,15 @@ class TSC_KSampler:
                                 lora_model_str = X_value[0][0][1] if lora_model_str is None else lora_model_str
                                 lora_clip_str = X_value[0][0][2] if lora_clip_str is None else lora_clip_str
                             elif X_type == "LoRA MStr":
-                                lora_name = os.path.basename(X_value[0][0][0]) if lora_name is None else lora_name
+                                lora_name = get_lora_name_for_weights(X_value[0][0][0], lora_name)
                                 lora_model_str = value
                                 lora_clip_str = X_value[0][0][2] if lora_clip_str is None else lora_clip_str
                             elif X_type == "LoRA CStr":
-                                lora_name = os.path.basename(X_value[0][0][0]) if lora_name is None else lora_name
+                                lora_name = get_lora_name_for_weights(X_value[0][0][0], lora_name)
                                 lora_model_str = X_value[0][0][1] if lora_model_str is None else lora_model_str
                                 lora_clip_str = value
                             elif X_type == "LoRA Wt":
-                                lora_name = os.path.basename(X_value[0][0][0]) if lora_name is None else lora_name
+                                lora_name = get_lora_name_for_weights(X_value[0][0][0], lora_name)
                                 lora_wt = value
 
                         if Y_type in lora_types:
@@ -1747,15 +1753,15 @@ class TSC_KSampler:
                                 lora_model_str = Y_value[0][0][1] if lora_model_str is None else lora_model_str
                                 lora_clip_str = Y_value[0][0][2] if lora_clip_str is None else lora_clip_str
                             elif Y_type == "LoRA MStr":
-                                lora_name = os.path.basename(Y_value[0][0][0]) if lora_name is None else lora_name
+                                lora_name = get_lora_name_for_weights(Y_value[0][0][0], lora_name)
                                 lora_model_str = value
                                 lora_clip_str = Y_value[0][0][2] if lora_clip_str is None else lora_clip_str
                             elif Y_type == "LoRA CStr":
-                                lora_name = os.path.basename(Y_value[0][0][0]) if lora_name is None else lora_name
+                                lora_name = get_lora_name_for_weights(Y_value[0][0][0], lora_name)
                                 lora_model_str = Y_value[0][0][1] if lora_model_str is None else lora_model_str
                                 lora_clip_str = value
                             elif Y_type == "LoRA Wt":
-                                lora_name = os.path.basename(Y_value[0][0][0]) if lora_name is None else lora_name
+                                lora_name = get_lora_name_for_weights(Y_value[0][0][0], lora_name)
                                 lora_wt = value
 
                     return lora_name, lora_wt, lora_model_str, lora_clip_str
