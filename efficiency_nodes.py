@@ -3031,8 +3031,8 @@ class TSC_XYplot_LoRA_Plot:
                 "X_first_value": ("FLOAT", {"default": 0.0, "min": 0.00, "max": 10.0, "step": 0.01}),
                 "X_last_value": ("FLOAT", {"default": 1.0, "min": 0.00, "max": 10.0, "step": 0.01}),
                 "Y_batch_count": ("INT", {"default": XYPLOT_DEF, "min": 0, "max": XYPLOT_LIM}),
-                "Y_first_value": ("FLOAT", {"default": 0.0, "min": 0.00, "max": 10.0, "step": 0.01}),
-                "Y_last_value": ("FLOAT", {"default": 1.0, "min": 0.00, "max": 10.0, "step": 0.01}),},
+                "Y_first_value": ("FLOAT", {"default": 0.0, "min": -10.00, "max": 10.0, "step": 0.01}),
+                "Y_last_value": ("FLOAT", {"default": 1.0, "min": -10.00, "max": 10.0, "step": 0.01}),},
             "optional": {"lora_stack": ("LORA_STACK",)}
         }
 
