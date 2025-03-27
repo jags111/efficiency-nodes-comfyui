@@ -19,6 +19,7 @@ import json
 import psutil
 
 from comfy_extras.nodes_align_your_steps import AlignYourStepsScheduler
+from comfy_extras.nodes_gits import GITSScheduler
 
 # Get the absolute path of various directories
 my_dir = os.path.dirname(os.path.abspath(__file__))
@@ -62,8 +63,8 @@ sys.path.append(custom_nodes_dir)
 REFINER_CFG_OFFSET = 0 #Refiner CFG Offset
 
 # Monkey patch schedulers
-SCHEDULER_NAMES = samplers.SCHEDULER_NAMES + ["AYS SD1", "AYS SDXL", "AYS SVD"]
-SCHEDULERS = samplers.KSampler.SCHEDULERS + ["AYS SD1", "AYS SDXL", "AYS SVD"]
+SCHEDULER_NAMES = samplers.SCHEDULER_NAMES + ["AYS SD1", "AYS SDXL", "AYS SVD", "GITS"]
+SCHEDULERS = samplers.KSampler.SCHEDULERS + ["AYS SD1", "AYS SDXL", "AYS SVD", "GITS"]
 
 ########################################################################################################################
 # Common function for encoding prompts
@@ -479,6 +480,8 @@ class TSC_KSampler:
             def calculate_sigmas(model_sampling, scheduler_name: str, steps):
                 if scheduler_name.startswith("AYS"):
                     return AlignYourStepsScheduler().get_sigmas(scheduler_name.split(" ")[1], steps, denoise=1.0)[0]
+                elif scheduler_name == "GITS":
+                    return GITSScheduler().get_sigmas(1.20, steps, denoise=1.0)[0]
                 return original_calculation(model_sampling, scheduler_name, steps)
 
             comfy.samplers.KSampler.SCHEDULERS = SCHEDULERS
