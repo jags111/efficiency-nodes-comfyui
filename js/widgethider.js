@@ -8,7 +8,7 @@ const findWidgetByName = (node, name) => {
 };
 
 const doesInputWithNameExist = (node, name) => {
-    return node.inputs ? node.inputs.some((input) => input.name === name) : false;
+    return false;
 };
 
 const HIDDEN_TAG = "tschide";
