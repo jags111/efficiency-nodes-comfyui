@@ -300,11 +300,11 @@ class TSC_LoRA_Stacker:
         inputs = {
             "required": {
                 "input_mode": (cls.modes,),
-                "lora_count": ("INT", {"default": 3, "min": 0, "max": 50, "step": 1}),
+                "lora_count": ("INT", {"default": 3, "min": 0, "max": 3, "step": 1}),
             }
         }
 
-        for i in range(1, 50):
+        for i in range(1, 4):
             inputs["required"][f"lora_name_{i}"] = (loras,)
             inputs["required"][f"lora_wt_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
             inputs["required"][f"model_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
