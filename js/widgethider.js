@@ -8,7 +8,8 @@ const findWidgetByName = (node, name) => {
 };
 
 const doesInputWithNameExist = (node, name) => {
-    return node.inputs ? node.inputs.some((input) => input.name === name) : false;
+    // return node.inputs ? node.inputs.some((input) => input.name === name) : false;
+    return false;
 };
 
 const HIDDEN_TAG = "tschide";
@@ -605,7 +606,9 @@ function handleXYInputControlNetPlotPlotType(node, widget) {
 app.registerExtension({
     name: "efficiency.widgethider",
     nodeCreated(node) {
+        if (!nodeWidgetHandlers[node.comfyClass]) return;
         for (const w of node.widgets || []) {
+            if (!nodeWidgetHandlers[node.comfyClass][w.name]) continue;
             let widgetValue = w.value;
 
             // Store the original descriptor if it exists
