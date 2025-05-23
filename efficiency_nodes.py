@@ -155,11 +155,17 @@ class TSC_EfficientLoader:
             if lora_stack:
                 lora_params.extend(lora_stack)
 
-            # Load LoRa(s)
-            model, clip = load_lora(lora_params, ckpt_name, my_unique_id, cache=lora_cache, ckpt_cache=ckpt_cache, cache_overwrite=True)
+            # Load LoRA(s)
+            model, clip = load_lora(lora_params, ckpt_name, my_unique_id, cache=lora_cache, ckpt_cache=ckpt_cache,
+                                    cache_overwrite=True)
 
             if vae_name == "Baked VAE":
                 vae = get_bvae_by_ckpt_name(ckpt_name)
+                if vae is None:
+                    print(
+                        f"{warning('Efficiency Nodes:')} Baked VAE not found in cache, loading checkpoint to extract VAE...")
+                    _, _, vae = load_checkpoint(ckpt_name, my_unique_id, output_vae=True, cache=ckpt_cache,
+                                                cache_overwrite=True)
         else:
             model, clip, vae = load_checkpoint(ckpt_name, my_unique_id, cache=ckpt_cache, cache_overwrite=True)
             lora_params = None
