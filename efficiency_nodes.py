@@ -506,7 +506,7 @@ class TSC_KSampler:
                     rng_source, cfg_denoiser, add_seed_noise, m_seed, m_weight = script["noise"]
                     smZ_rng_source.rng_rand_source(rng_source) # this function monkey patches comfy.sample.prepare_noise
                     if cfg_denoiser:
-                        comfy.samplers.KSampler = smZ_cfg_denoiser.SDKSampler
+                        comfy.samplers.KSampler = smZ_cfg_denoiser.KSampler
                     if add_seed_noise:
                         comfy.sample.prepare_noise = cg_mixed_seed_noise.get_mixed_noise_function(comfy.sample.prepare_noise, m_seed, m_weight)
                     else:
