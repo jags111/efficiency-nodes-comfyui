@@ -768,7 +768,6 @@ def hook_for_settings_node_and_sampling():
         _Sampler = comfy.samplers.Sampler
         _max_denoise = comfy.samplers.Sampler.max_denoise
         _sample = comfy.samplers.sample
-        _wrap_model = comfy.samplers.wrap_model
 
         def get_value_from_args(args, kwargs, key_to_lookup, fn, idx=None):
             value = None
