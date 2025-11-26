@@ -475,26 +475,10 @@ class TSC_KSampler:
                                 refiner_model, refiner_positive, refiner_negative, vae, vae_decode, preview_method):
 
             # Store originals
-            original_calculation = comfy.samplers.calculate_sigmas
-            original_KSampler_SCHEDULERS = comfy.samplers.KSampler.SCHEDULERS
             previous_preview_method = global_preview_method()
             original_prepare_noise = comfy.sample.prepare_noise
             original_KSampler = comfy.samplers.KSampler
             original_model_str = str(model)
-
-            # monkey patch the sample function
-            def calculate_sigmas(model_sampling, scheduler_name: str, steps):
-                if scheduler_name.startswith("AYS"):
-                    return AlignYourStepsScheduler().get_sigmas(scheduler_name.split(" ")[1], steps, denoise=1.0)[0]
-                elif scheduler_name == "GITS":
-                    try:
-                        return GITSScheduler().get_sigmas(1.20, steps, denoise=1.0)[0]
-                    except AttributeError:
-                        return GITSScheduler().execute(1.20, steps, denoise=1.0)[0]
-                return original_calculation(model_sampling, scheduler_name, steps)
-
-            comfy.samplers.KSampler.SCHEDULERS = SCHEDULERS
-            comfy.samplers.calculate_sigmas = calculate_sigmas
 
             # Initialize output variables
             samples = images = gifs = preview = cnet_imgs = None
@@ -559,13 +543,61 @@ class TSC_KSampler:
 
                 # Sample the latent_image(s) using the Comfy KSampler nodes
                 elif sampler_type == "regular":
-                    samples = KSampler().sample(model, seed, steps, cfg, sampler_name, scheduler, positive, negative,
-                                                        latent_image, denoise=denoise)[0] if denoise>0 else latent_image
+                    if scheduler == "GITS" or scheduler.startswith("AYS"):
+                        if scheduler.startswith("AYS"):
+                            sigmas = AlignYourStepsScheduler().get_sigmas(scheduler.split(" ")[1], steps, denoise=1.0)[0]
+                        else:
+                            try:
+                                sigmas = GITSScheduler().get_sigmas(1.20, steps, denoise=1.0)[0]
+                            except AttributeError:
+                                sigmas = GITSScheduler().execute(1.20, steps, denoise=1.0)[0]
+
+                        if denoise < 1.0:
+                            if denoise > 0.0:
+                                total_steps = len(sigmas) - 1
+                                start_step = int(total_steps * (1.0 - denoise))
+                                sigmas = sigmas[start_step:]
+                            else:
+                                sigmas = torch.FloatTensor([])
+
+                        if len(sigmas) == 0:
+                            samples = latent_image
+                        else:
+                            noise = comfy.sample.prepare_noise(latent_image["samples"], seed)
+                            noise_mask = latent_image.get("noise_mask", None)
+                            sample = comfy.sample.sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_image["samples"],
+                                                        denoise=denoise, disable_noise=False, start_step=None, last_step=None,
+                                                        force_full_denoise=True, noise_mask=noise_mask, sigmas=sigmas)
+                            samples = {"samples": sample}
+                    else:
+                        samples = KSampler().sample(model, seed, steps, cfg, sampler_name, scheduler, positive, negative,
+                                                            latent_image, denoise=denoise)[0] if denoise>0 else latent_image
 
                 elif sampler_type == "advanced":
-                    samples = KSamplerAdvanced().sample(model, add_noise, seed, steps, cfg, sampler_name, scheduler,
-                                                        positive, negative, latent_image, start_at_step, end_at_step,
-                                                        return_with_leftover_noise, denoise=1.0)[0]
+                    if scheduler == "GITS" or scheduler.startswith("AYS"):
+                        if scheduler.startswith("AYS"):
+                            sigmas = AlignYourStepsScheduler().get_sigmas(scheduler.split(" ")[1], steps, denoise=1.0)[0]
+                        else:
+                            try:
+                                sigmas = GITSScheduler().get_sigmas(1.20, steps, denoise=1.0)[0]
+                            except AttributeError:
+                                sigmas = GITSScheduler().execute(1.20, steps, denoise=1.0)[0]
+
+                        sigmas = sigmas[start_at_step:end_at_step+1]
+
+                        noise = comfy.sample.prepare_noise(latent_image["samples"], seed)
+                        noise_mask = latent_image.get("noise_mask", None)
+                        disable_noise = add_noise == "disable"
+                        force_full_denoise = return_with_leftover_noise == "disable"
+
+                        sample = comfy.sample.sample(model, noise, steps, cfg, sampler_name, scheduler, positive, negative, latent_image["samples"],
+                                                    denoise=1.0, disable_noise=disable_noise, start_step=None, last_step=None,
+                                                    force_full_denoise=force_full_denoise, noise_mask=noise_mask, sigmas=sigmas)
+                        samples = {"samples": sample}
+                    else:
+                        samples = KSamplerAdvanced().sample(model, add_noise, seed, steps, cfg, sampler_name, scheduler,
+                                                            positive, negative, latent_image, start_at_step, end_at_step,
+                                                            return_with_leftover_noise, denoise=1.0)[0]
 
                 elif sampler_type == "sdxl":
                     # Disable refiner if refine_at_step is -1
@@ -727,8 +759,6 @@ class TSC_KSampler:
                 set_preview_method(previous_preview_method)
                 comfy.samplers.KSampler = original_KSampler
                 comfy.sample.prepare_noise = original_prepare_noise
-                comfy.samplers.calculate_sigmas = original_calculation
-                comfy.samplers.KSampler.SCHEDULERS = original_KSampler_SCHEDULERS
 
             return samples, images, gifs, preview
 
