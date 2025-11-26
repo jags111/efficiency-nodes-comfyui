@@ -487,7 +487,10 @@ class TSC_KSampler:
                 if scheduler_name.startswith("AYS"):
                     return AlignYourStepsScheduler().get_sigmas(scheduler_name.split(" ")[1], steps, denoise=1.0)[0]
                 elif scheduler_name == "GITS":
-                    return GITSScheduler().get_sigmas(1.20, steps, denoise=1.0)[0]
+                    try:
+                        return GITSScheduler().get_sigmas(1.20, steps, denoise=1.0)[0]
+                    except AttributeError:
+                        return GITSScheduler().execute(1.20, steps, denoise=1.0)[0]
                 return original_calculation(model_sampling, scheduler_name, steps)
 
             comfy.samplers.KSampler.SCHEDULERS = SCHEDULERS
