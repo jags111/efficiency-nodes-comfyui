@@ -6,7 +6,7 @@ This repository provides custom efficiency nodes for [ComfyUI](https://github.co
 
 ## Project Structure
 
-- **`efficiency_nodes.py`**: Main file containing all 45+ node class definitions (4,464 lines)
+- **`efficiency_nodes.py`**: Main file containing all 45+ node class definitions (primary implementation file)
 - **`tsc_utils.py`**: Utility functions for caching, tensor operations, and console messaging
 - **`__init__.py`**: Entry point that exports NODE_CLASS_MAPPINGS for ComfyUI
 - **`py/`**: Specialized modules for upscaling, sampling, encoding, and tiling
