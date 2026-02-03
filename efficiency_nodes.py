@@ -326,6 +326,10 @@ class TSC_LoRA_Stacker:
     FUNCTION = "lora_stacker"
     CATEGORY = "Efficiency Nodes/Stackers"
 
+    @classmethod
+    def IS_CHANGED(cls, **kwargs):
+        return float("nan")
+
     def lora_stacker(self, input_mode, lora_count, lora_stack=None, **kwargs):
 
         # Extract values from kwargs
