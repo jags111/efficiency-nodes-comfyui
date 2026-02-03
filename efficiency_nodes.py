@@ -1745,7 +1745,11 @@ class TSC_KSampler:
                     if X_type not in lora_types and Y_type not in lora_types:
                         if lora_stack:
                             names_list = []
-                            for name, model_wt, clip_wt in lora_stack:
+                            for lora_tuple in lora_stack:
+                                # Support both 3-tuple and 4-tuple
+                                name = lora_tuple[0]
+                                model_wt = lora_tuple[1]
+                                clip_wt = lora_tuple[2]
                                 base_name = os.path.splitext(os.path.basename(name))[0]
                                 formatted_str = f"{base_name}({round(model_wt, 3)},{round(clip_wt, 3)})"
                                 names_list.append(formatted_str)
