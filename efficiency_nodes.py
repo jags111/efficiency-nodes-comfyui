@@ -100,6 +100,16 @@ def encode_prompts(positive_prompt, negative_prompt, token_normalization, weight
         return positive_encoded, negative_encoded, clip, refiner_positive_encoded, refiner_negative_encoded, refiner_clip
 
 ########################################################################################################################
+# Helper function for VAE error message
+def get_missing_vae_error(ckpt_name):
+    """Generate error message for checkpoints without embedded VAE"""
+    return (
+        f"Checkpoint '{ckpt_name}' does not contain an embedded VAE. "
+        f"This checkpoint (likely an AIO model) requires an external VAE. "
+        f"Please select a VAE file instead of 'Baked VAE'."
+    )
+
+########################################################################################################################
 # TSC Efficient Loader
 class TSC_EfficientLoader:
 
@@ -166,6 +176,9 @@ class TSC_EfficientLoader:
                         f"{warning('Efficiency Nodes:')} Baked VAE not found in cache, loading checkpoint to extract VAE...")
                     _, _, vae = load_checkpoint(ckpt_name, my_unique_id, output_vae=True, cache=ckpt_cache,
                                                 cache_overwrite=True)
+                    # Check if VAE extraction was successful
+                    if vae is None:
+                        raise ValueError(get_missing_vae_error(ckpt_name))
         else:
             model, clip, vae = load_checkpoint(ckpt_name, my_unique_id, cache=ckpt_cache, cache_overwrite=True)
             lora_params = None
@@ -195,6 +208,9 @@ class TSC_EfficientLoader:
         # Check for custom VAE
         if vae_name != "Baked VAE":
             vae = load_vae(vae_name, my_unique_id, cache=vae_cache, cache_overwrite=True)
+        elif vae is None:
+            # If "Baked VAE" was selected but checkpoint has no embedded VAE
+            raise ValueError(get_missing_vae_error(ckpt_name))
 
         # Data for XY Plot
         dependencies = (vae_name, ckpt_name, clip, clip_skip, refiner_name, refiner_clip, refiner_clip_skip,
