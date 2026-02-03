@@ -69,7 +69,9 @@ Here's a typical workflow using trigger words:
 
 1. Create an **XY Input: LoRA Plot** node
 2. Set `input_mode` to "X: LoRA Batch, Y: LoRA Weight"
-3. Set `X_batch_path` to your LoRA directory (e.g., `d:\LoRas`)
+3. Set `X_batch_path` to your LoRA directory 
+   - Windows: `d:\LoRas` or `C:\ComfyUI\models\loras`
+   - Linux/Mac: `/path/to/loras` or `~/ComfyUI/models/loras`
 4. Set `X_batch_count` to the number of LoRAs you want to test
 5. In the `X_trigger_words` field, enter trigger words (one per line):
    ```

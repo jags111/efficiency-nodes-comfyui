@@ -1271,13 +1271,15 @@ class TSC_KSampler:
                     lora_trigger_word = lora_tuple[3] if len(lora_tuple) > 3 else ""
                     
                     # Inject trigger word into positive prompt if present
+                    # positive_prompt structure: (current_prompt, original_prompt, prompt_after_X_loop)
                     if lora_trigger_word:
                         if positive_prompt[2] is not None:
-                            # In Y loop after X loop
+                            # In Y loop after X loop - build on the X loop result
                             positive_prompt = (positive_prompt[2] + " " + lora_trigger_word, positive_prompt[1], positive_prompt[2])
                         else:
-                            # In X loop or initial
-                            positive_prompt = (positive_prompt[1] + " " + lora_trigger_word, positive_prompt[1], positive_prompt[1] + " " + lora_trigger_word)
+                            # In X loop or initial - build on original and save for Y loop
+                            modified_prompt = positive_prompt[1] + " " + lora_trigger_word
+                            positive_prompt = (modified_prompt, positive_prompt[1], modified_prompt)
                     
                     lora_filename = os.path.splitext(os.path.basename(lora_name))[0]
 
