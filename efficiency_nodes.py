@@ -315,6 +315,7 @@ class TSC_LoRA_Stacker:
             inputs["required"][f"lora_wt_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
             inputs["required"][f"model_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
             inputs["required"][f"clip_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
+            inputs["required"][f"trigger_word_{i}"] = ("STRING", {"default": "", "multiline": False})
 
         inputs["optional"] = {
             "lora_stack": ("LORA_STACK",)
@@ -330,17 +331,18 @@ class TSC_LoRA_Stacker:
 
         # Extract values from kwargs
         loras = [kwargs.get(f"lora_name_{i}") for i in range(1, lora_count + 1)]
+        trigger_words = [kwargs.get(f"trigger_word_{i}", "") for i in range(1, lora_count + 1)]
 
         # Create a list of tuples using provided parameters, exclude tuples with lora_name as "None"
         if input_mode == "simple":
             weights = [kwargs.get(f"lora_wt_{i}") for i in range(1, lora_count + 1)]
-            loras = [(lora_name, lora_weight, lora_weight) for lora_name, lora_weight in zip(loras, weights) if
+            loras = [(lora_name, lora_weight, lora_weight, trigger_word) for lora_name, lora_weight, trigger_word in zip(loras, weights, trigger_words) if
                      lora_name != "None"]
         else:
             model_strs = [kwargs.get(f"model_str_{i}") for i in range(1, lora_count + 1)]
             clip_strs = [kwargs.get(f"clip_str_{i}") for i in range(1, lora_count + 1)]
-            loras = [(lora_name, model_str, clip_str) for lora_name, model_str, clip_str in
-                     zip(loras, model_strs, clip_strs) if lora_name != "None"]
+            loras = [(lora_name, model_str, clip_str, trigger_word) for lora_name, model_str, clip_str, trigger_word in
+                     zip(loras, model_strs, clip_strs, trigger_words) if lora_name != "None"]
 
         # If lora_stack is not None, extend the loras list with lora_stack
         if lora_stack is not None:
@@ -1261,7 +1263,24 @@ class TSC_KSampler:
                         lora_stack[0] = tuple(v if v is not None else lora_stack[0][i] for i, v in enumerate(var[0]))
 
                     max_label_len = 50 + (12 * (len(lora_stack) - 1))
-                    lora_name, lora_model_wt, lora_clip_wt = lora_stack[0]
+                    # Support both 3-tuple (old) and 4-tuple (new with trigger words)
+                    lora_tuple = lora_stack[0]
+                    lora_name = lora_tuple[0]
+                    lora_model_wt = lora_tuple[1]
+                    lora_clip_wt = lora_tuple[2]
+                    lora_trigger_word = lora_tuple[3] if len(lora_tuple) > 3 else ""
+                    
+                    # Inject trigger word into positive prompt if present
+                    # positive_prompt structure: (current_prompt, original_prompt, prompt_after_X_loop)
+                    if lora_trigger_word:
+                        if positive_prompt[2] is not None:
+                            # In Y loop after X loop - build on the X loop result
+                            positive_prompt = (positive_prompt[2] + " " + lora_trigger_word, positive_prompt[1], positive_prompt[2])
+                        else:
+                            # In X loop or initial - build on original and save for Y loop
+                            modified_prompt = positive_prompt[1] + " " + lora_trigger_word
+                            positive_prompt = (modified_prompt, positive_prompt[1], modified_prompt)
+                    
                     lora_filename = os.path.splitext(os.path.basename(lora_name))[0]
 
                     if var_type == "LoRA" or var_type == "LoRA Stacks":
@@ -1274,11 +1293,12 @@ class TSC_KSampler:
                             else:
                                 text = f"LoRA: {lora_filename}({lora_model_wt},{lora_clip_wt})"
                         elif len(lora_stack) > 1:
-                            lora_filenames = [os.path.splitext(os.path.basename(lora_name))[0] for lora_name, _, _ in
-                                              lora_stack]
-                            lora_details = [(format(float(lora_model_wt), ".2f").rstrip('0').rstrip('.'),
-                                             format(float(lora_clip_wt), ".2f").rstrip('0').rstrip('.')) for
-                                            _, lora_model_wt, lora_clip_wt in lora_stack]
+                            lora_filenames = []
+                            lora_details = []
+                            for lora_tuple in lora_stack:
+                                lora_filenames.append(os.path.splitext(os.path.basename(lora_tuple[0]))[0])
+                                lora_details.append((format(float(lora_tuple[1]), ".2f").rstrip('0').rstrip('.'),
+                                                    format(float(lora_tuple[2]), ".2f").rstrip('0').rstrip('.')))
                             non_name_length = sum(
                                 len(f"({lora_details[i][0]},{lora_details[i][1]})") + 2 for i in range(len(lora_stack)))
                             available_space = max_label_len - non_name_length
@@ -1727,7 +1747,11 @@ class TSC_KSampler:
                     if X_type not in lora_types and Y_type not in lora_types:
                         if lora_stack:
                             names_list = []
-                            for name, model_wt, clip_wt in lora_stack:
+                            for lora_tuple in lora_stack:
+                                # Support both 3-tuple and 4-tuple
+                                name = lora_tuple[0]
+                                model_wt = lora_tuple[1]
+                                clip_wt = lora_tuple[2]
                                 base_name = os.path.splitext(os.path.basename(name))[0]
                                 formatted_str = f"{base_name}({round(model_wt, 3)},{round(clip_wt, 3)})"
                                 names_list.append(formatted_str)
@@ -2923,7 +2947,8 @@ class TSC_XYplot_LoRA_Batch:
                 "batch_sort": (["ascending", "descending"],),
                 "batch_max": ("INT",{"default": -1, "min": -1, "max": XYPLOT_LIM, "step": 1}),
                 "model_strength": ("FLOAT", {"default": 1.0, "min": -10.00, "max": 10.0, "step": 0.01}),
-                "clip_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})},
+                "clip_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "trigger_words": ("STRING", {"default": "", "multiline": True})},
                 "optional": {"lora_stack": ("LORA_STACK",)}
         }
 
@@ -2932,7 +2957,7 @@ class TSC_XYplot_LoRA_Batch:
     FUNCTION = "xy_value"
     CATEGORY = "Efficiency Nodes/XY Inputs"
 
-    def xy_value(self, batch_path, subdirectories, batch_sort, model_strength, clip_strength, batch_max, lora_stack=None):
+    def xy_value(self, batch_path, subdirectories, batch_sort, model_strength, clip_strength, trigger_words, batch_max, lora_stack=None):
         if batch_max == 0:
             return (None,)
 
@@ -2949,8 +2974,14 @@ class TSC_XYplot_LoRA_Batch:
         elif batch_sort == "descending":
             loras.sort(reverse=True)
 
+        # Parse trigger words (one per line)
+        trigger_word_list = [tw.strip() for tw in trigger_words.split('\n')] if trigger_words else []
+        
         # Construct the xy_value using the obtained loras
-        xy_value = [[(lora, model_strength, clip_strength)] + (lora_stack if lora_stack else []) for lora in loras]
+        xy_value = []
+        for i, lora in enumerate(loras):
+            trigger_word = trigger_word_list[i] if i < len(trigger_word_list) else ""
+            xy_value.append([(lora, model_strength, clip_strength, trigger_word)] + (lora_stack if lora_stack else []))
 
         if batch_max != -1:  # If there's a limit
             xy_value = xy_value[:batch_max]
@@ -2976,6 +3007,7 @@ class TSC_XYplot_LoRA:
                 "lora_count": ("INT", {"default": XYPLOT_DEF, "min": 0, "max": XYPLOT_LIM, "step": 1}),
                 "model_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
                 "clip_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "trigger_words": ("STRING", {"default": "", "multiline": True}),
             }
         }
 
@@ -2983,6 +3015,7 @@ class TSC_XYplot_LoRA:
             inputs["required"][f"lora_name_{i}"] = (loras,)
             inputs["required"][f"model_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
             inputs["required"][f"clip_str_{i}"] = ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01})
+            inputs["required"][f"trigger_word_{i}"] = ("STRING", {"default": "", "multiline": False})
 
         inputs["optional"] = {
             "lora_stack": ("LORA_STACK",)
@@ -3009,6 +3042,7 @@ class TSC_XYplot_LoRA:
             loras = [kwargs.get(f"lora_name_{i}") for i in range(1, lora_count + 1)]
             model_strs = [kwargs.get(f"model_str_{i}", model_strength) for i in range(1, lora_count + 1)]
             clip_strs = [kwargs.get(f"clip_str_{i}", clip_strength) for i in range(1, lora_count + 1)]
+            trigger_words = [kwargs.get(f"trigger_word_{i}", "") for i in range(1, lora_count + 1)]
 
             # Use model_strength and clip_strength for the loras where values are not provided
             if "Weights" not in input_mode:
@@ -3017,14 +3051,17 @@ class TSC_XYplot_LoRA:
                     clip_strs[i] = clip_strength
 
             # Extend each sub-array with lora_stack if it's not None
-            xy_value = [[(lora, model_str, clip_str)] + lora_stack for lora, model_str, clip_str
-                        in zip(loras, model_strs, clip_strs) if lora != "None"]
+            xy_value = [[(lora, model_str, clip_str, trigger_word)] + lora_stack 
+                        for lora, model_str, clip_str, trigger_word
+                        in zip(loras, model_strs, clip_strs, trigger_words) if lora != "None"]
 
             result = ((xy_type, xy_value),)
         else:
             try:
+                # Get trigger_words from kwargs, default to empty string
+                trigger_words = kwargs.get("trigger_words", "")
                 result = self.lora_batch.xy_value(batch_path, subdirectories, batch_sort, model_strength,
-                                                  clip_strength, batch_max, lora_stack)
+                                                  clip_strength, trigger_words, batch_max, lora_stack)
             except Exception as e:
                 print(f"{error('XY Plot Error:')} {e}")
 
@@ -3048,10 +3085,12 @@ class TSC_XYplot_LoRA_Plot:
                 "lora_name": (loras,),
                 "model_strength": ("FLOAT", {"default": 1.0, "min": -10.00, "max": 10.0, "step": 0.01}),
                 "clip_strength": ("FLOAT", {"default": 1.0, "min": -10.0, "max": 10.0, "step": 0.01}),
+                "trigger_word": ("STRING", {"default": "", "multiline": False}),
                 "X_batch_count": ("INT", {"default": XYPLOT_DEF, "min": 0, "max": XYPLOT_LIM}),
                 "X_batch_path": ("STRING", {"default": xy_batch_default_path, "multiline": False}),
                 "X_subdirectories": ("BOOLEAN", {"default": False}),
                 "X_batch_sort": (["ascending", "descending"],),
+                "X_trigger_words": ("STRING", {"default": "", "multiline": True}),
                 "X_first_value": ("FLOAT", {"default": 0.0, "min": -10.00, "max": 10.0, "step": 0.01}),
                 "X_last_value": ("FLOAT", {"default": 1.0, "min": -10.00, "max": 10.0, "step": 0.01}),
                 "Y_batch_count": ("INT", {"default": XYPLOT_DEF, "min": 0, "max": XYPLOT_LIM}),
@@ -3090,8 +3129,8 @@ class TSC_XYplot_LoRA_Plot:
 
         return (None,)
 
-    def xy_value(self, input_mode, lora_name, model_strength, clip_strength, X_batch_count, X_batch_path, X_subdirectories,
-                 X_batch_sort, X_first_value, X_last_value, Y_batch_count, Y_first_value, Y_last_value, lora_stack=None):
+    def xy_value(self, input_mode, lora_name, model_strength, clip_strength, trigger_word, X_batch_count, X_batch_path, X_subdirectories,
+                 X_batch_sort, X_trigger_words, X_first_value, X_last_value, Y_batch_count, Y_first_value, Y_last_value, lora_stack=None):
 
         x_value, y_value = [], []
         lora_stack = lora_stack if lora_stack else []
@@ -3101,6 +3140,7 @@ class TSC_XYplot_LoRA_Plot:
                 return (None,None,)
         if "LoRA Batch" in input_mode:
             lora_name = None
+            trigger_word = None
         if "LoRA Weight" in input_mode:
             model_strength = None
             clip_strength = None
@@ -3113,7 +3153,7 @@ class TSC_XYplot_LoRA_Plot:
         if "X: LoRA Batch" in input_mode:
             try:
                 x_value = self.lora_batch.xy_value(X_batch_path, X_subdirectories, X_batch_sort,
-                                                   model_strength, clip_strength, X_batch_count, lora_stack)[0][1]
+                                                   model_strength, clip_strength, X_trigger_words, X_batch_count, lora_stack)[0][1]
             except Exception as e:
                 print(f"{error('XY Plot Error:')} {e}")
                 return (None,)
@@ -3121,19 +3161,19 @@ class TSC_XYplot_LoRA_Plot:
         elif "X: Model Strength" in input_mode:
             x_floats = generate_floats(X_batch_count, X_first_value, X_last_value)
             x_type = "LoRA MStr"
-            x_value = [[(lora_name, x, clip_strength)] + lora_stack for x in x_floats]
+            x_value = [[(lora_name, x, clip_strength, trigger_word)] + lora_stack for x in x_floats]
 
         # Handling Y values
         y_floats = generate_floats(Y_batch_count, Y_first_value, Y_last_value)
         if "Y: LoRA Weight" in input_mode:
             y_type = "LoRA Wt"
-            y_value = [[(lora_name, y, y)] + lora_stack for y in y_floats]
+            y_value = [[(lora_name, y, y, trigger_word)] + lora_stack for y in y_floats]
         elif "Y: Model Strength" in input_mode:
             y_type = "LoRA MStr"
-            y_value = [[(lora_name, y, clip_strength)] + lora_stack for y in y_floats]
+            y_value = [[(lora_name, y, clip_strength, trigger_word)] + lora_stack for y in y_floats]
         elif "Y: Clip Strength" in input_mode:
             y_type = "LoRA CStr"
-            y_value = [[(lora_name, model_strength, y)] + lora_stack for y in y_floats]
+            y_value = [[(lora_name, model_strength, y, trigger_word)] + lora_stack for y in y_floats]
 
         return ((x_type, x_value), (y_type, y_value))
 
