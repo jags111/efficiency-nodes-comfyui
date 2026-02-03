@@ -117,7 +117,10 @@ class SeedControl {
                 this.updateButtonLabel();
             }
 
-            this.seedWidget.value = this.serializedCtx.seedUsed;
+            // Don't update the widget value to maintain -1 in the UI when seed was special
+            if (!this.serializedCtx.wasSpecial) {
+                this.seedWidget.value = this.serializedCtx.seedUsed;
+            }
 
             if (this.serializedCtx.wasSpecial) {
                 this.lastSeed = this.serializedCtx.seedUsed;
@@ -133,12 +136,8 @@ class SeedControl {
                 return; // Exit the function immediately
             }
 
-            if (this.serializedCtx.wasSpecial) {
-                this.seedWidget.value = -1;
-            }
-
-            // Check if seed has changed to a non -1 value, and if so, update lastSeed
-            if (this.seedWidget.value !== -1) {
+            // Update lastSeed if user manually changed the seed to a specific value
+            if (!this.serializedCtx.wasSpecial && this.seedWidget.value !== -1) {
                 this.lastSeed = this.seedWidget.value;
             }
 
