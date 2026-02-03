@@ -53,6 +53,7 @@ from .py import city96_latent_upscaler
 from .py import ttl_nn_latent_upscaler
 from .py import bnk_tiled_samplers
 from .py import bnk_adv_encode
+from .py.bnk_adv_encode import normalize_prompt_text
 sys.path.remove(my_dir)
 
 from comfy import samplers
@@ -71,6 +72,9 @@ SCHEDULERS = samplers.KSampler.SCHEDULERS + ["AYS SD1", "AYS SDXL", "AYS SVD", "
 def encode_prompts(positive_prompt, negative_prompt, token_normalization, weight_interpretation, clip, clip_skip,
                    refiner_clip, refiner_clip_skip, ascore, is_sdxl, empty_latent_width, empty_latent_height,
                    return_type="both"):
+    # Ensure prompts are valid strings to prevent tokenization errors
+    positive_prompt = normalize_prompt_text(positive_prompt)
+    negative_prompt = normalize_prompt_text(negative_prompt)
 
     positive_encoded = negative_encoded = refiner_positive_encoded = refiner_negative_encoded = None
 
