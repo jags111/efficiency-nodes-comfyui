@@ -4024,7 +4024,7 @@ class TSC_LivePreview:
                 "images": ("IMAGE",),
             },
             "hidden": {
-                "prompt": "PROMPT", 
+                "prompt": "PROMPT",
                 "extra_pnginfo": "EXTRA_PNGINFO"
             },
         }
