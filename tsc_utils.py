@@ -354,7 +354,13 @@ def load_lora(lora_params, ckpt_name, id, cache=None, ckpt_cache=None, cache_ove
         if len(lora_params) == 0:
             return ckpt, clip
 
-        lora_name, strength_model, strength_clip = lora_params[0]
+        lora_tuple = lora_params[0]
+        # Support both 3-tuple (old) and 4-tuple (new with trigger words)
+        lora_name = lora_tuple[0]
+        strength_model = lora_tuple[1]
+        strength_clip = lora_tuple[2]
+        # Ignore trigger_word (index 3) if present - it's only for prompt modification
+        
         if os.path.isabs(lora_name):
             lora_path = lora_name
         else:
@@ -375,7 +381,11 @@ def load_lora(lora_params, ckpt_name, id, cache=None, ckpt_cache=None, cache_ove
         return recursive_load_lora(lora_params[1:], lora_model, lora_clip, id, ckpt_cache, cache_overwrite, folder_paths)
 
     # Unpack lora parameters from the first element of the list for now
-    lora_name, strength_model, strength_clip = lora_params[0]
+    # Support both 3-tuple (old) and 4-tuple (new with trigger words)
+    lora_tuple = lora_params[0]
+    lora_name = lora_tuple[0]
+    strength_model = lora_tuple[1]
+    strength_clip = lora_tuple[2]
     ckpt, clip, _ = load_checkpoint(ckpt_name, id, cache=ckpt_cache)
 
     lora_model, lora_clip = recursive_load_lora(lora_params, ckpt, clip, id, ckpt_cache, cache_overwrite, folder_paths)
