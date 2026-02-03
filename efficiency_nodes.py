@@ -53,6 +53,7 @@ from .py import city96_latent_upscaler
 from .py import ttl_nn_latent_upscaler
 from .py import bnk_tiled_samplers
 from .py import bnk_adv_encode
+from .py.bnk_adv_encode import normalize_prompt_text
 sys.path.remove(my_dir)
 
 from comfy import samplers
@@ -73,10 +74,8 @@ def encode_prompts(positive_prompt, negative_prompt, token_normalization, weight
                    return_type="both"):
 
     # Ensure prompts are valid strings to prevent tokenization errors
-    if positive_prompt is None or (isinstance(positive_prompt, str) and not positive_prompt.strip()):
-        positive_prompt = " "
-    if negative_prompt is None or (isinstance(negative_prompt, str) and not negative_prompt.strip()):
-        negative_prompt = " "
+    positive_prompt = normalize_prompt_text(positive_prompt)
+    negative_prompt = normalize_prompt_text(negative_prompt)
 
     positive_encoded = negative_encoded = refiner_positive_encoded = refiner_negative_encoded = None
 
