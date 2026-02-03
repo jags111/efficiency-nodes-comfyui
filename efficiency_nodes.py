@@ -72,7 +72,6 @@ SCHEDULERS = samplers.KSampler.SCHEDULERS + ["AYS SD1", "AYS SDXL", "AYS SVD", "
 def encode_prompts(positive_prompt, negative_prompt, token_normalization, weight_interpretation, clip, clip_skip,
                    refiner_clip, refiner_clip_skip, ascore, is_sdxl, empty_latent_width, empty_latent_height,
                    return_type="both"):
-
     # Ensure prompts are valid strings to prevent tokenization errors
     positive_prompt = normalize_prompt_text(positive_prompt)
     negative_prompt = normalize_prompt_text(negative_prompt)
