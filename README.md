@@ -134,6 +134,17 @@ Please check out our WIKI for any use cases and new developments including workf
 </details>
 <!-------------------------------------------------------------------------------------------------------------------------------------------------------->
 <details>
+    <summary><b>Live Preview (Eff.)</b></summary>
+<ul>
+    <li>Node that displays a live preview of images while allowing them to pass through to other nodes in the workflow.</li>
+    <li>Can be connected to multiple samplers sequentially to show progressive updates as the workflow advances through different stages (base sampling, refining, hi-res fix, detailing, etc.).</li>
+    <li>Useful for placing preview displays outside of subgraphs or in custom locations within complex workflows.</li>
+    <li>Simply connect the IMAGE output from any sampler or image processing node to this node's input, and connect its output to continue the workflow.</li>
+</ul>
+ 
+</details>
+<!-------------------------------------------------------------------------------------------------------------------------------------------------------->
+<details>
     <summary><b>SimpleEval Nodes</b></summary>
 <ul>
     <li>A collection of nodes that allows users to write simple Python expressions for a variety of data types using the <i><a href="https://github.com/danthedeckie/simpleeval" >simpleeval</a></i> library.</li>
