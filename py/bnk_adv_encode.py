@@ -9,8 +9,21 @@ from comfy.sdxl_clip import SDXLClipModel, SDXLRefinerClipModel, SDXLClipG
 def normalize_prompt_text(text):
     """
     Normalize prompt text to prevent tokenization errors.
+    
     Converts None, empty strings, or whitespace-only strings to a single space.
-    Ensures the input is a string type.
+    Ensures the input is a string type by converting non-string values.
+    This function is designed to handle edge cases gracefully without crashing,
+    which is important for ComfyUI workflows where users might have empty prompts.
+    
+    Parameters:
+        text: The input prompt text to normalize. Can be of any type, though
+              string, None, or convertible types are expected.
+    
+    Returns:
+        str: A normalized string that is safe to pass to the tokenizer.
+             Returns " " (single space) for None, empty, or whitespace-only inputs.
+             Returns the original text unchanged if it's a valid non-empty string.
+             Returns str(text) for non-string types.
     """
     if text is None:
         return " "
