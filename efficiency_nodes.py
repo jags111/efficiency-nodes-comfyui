@@ -3957,6 +3957,10 @@ class TSC_ImageOverlay:
             samples = overlay_image.movedim(-1, 1)
             overlay_image = comfy.utils.common_upscale(samples, overlay_image_size[0], overlay_image_size[1], resize_method, False)
             overlay_image = overlay_image.movedim(1, -1)
+        
+        # Handle batch dimension - use first image if overlay_image is a batch
+        if len(overlay_image.shape) == 4:
+            overlay_image = overlay_image[0]
             
         overlay_image = tensor2pil(overlay_image)
 
