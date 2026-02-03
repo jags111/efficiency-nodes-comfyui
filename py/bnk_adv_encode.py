@@ -237,6 +237,9 @@ def prepareXL(embs_l, embs_g, pooled, clip_balance):
         return embs_g, pooled
 
 def advanced_encode(clip, text, token_normalization, weight_interpretation, w_max=1.0, clip_balance=.5, apply_to_pooled=True):
+    # Ensure text is a valid string to prevent tokenization errors
+    if text is None or (isinstance(text, str) and not text.strip()):
+        text = " "
     tokenized = clip.tokenize(text, return_word_ids=True)
     if isinstance(clip.cond_stage_model, (SDXLClipModel, SDXLRefinerClipModel, SDXLClipG)):
         embs_l = None
@@ -265,6 +268,11 @@ def advanced_encode(clip, text, token_normalization, weight_interpretation, w_ma
                                            lambda x: (clip.encode_from_tokens({'l': x}), None),
                                            w_max=w_max)
 def advanced_encode_XL(clip, text1, text2, token_normalization, weight_interpretation, w_max=1.0, clip_balance=.5, apply_to_pooled=True):
+    # Ensure texts are valid strings to prevent tokenization errors
+    if text1 is None or (isinstance(text1, str) and not text1.strip()):
+        text1 = " "
+    if text2 is None or (isinstance(text2, str) and not text2.strip()):
+        text2 = " "
     tokenized1 = clip.tokenize(text1, return_word_ids=True)
     tokenized2 = clip.tokenize(text2, return_word_ids=True)
 

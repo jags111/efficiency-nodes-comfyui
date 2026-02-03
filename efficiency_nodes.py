@@ -72,6 +72,12 @@ def encode_prompts(positive_prompt, negative_prompt, token_normalization, weight
                    refiner_clip, refiner_clip_skip, ascore, is_sdxl, empty_latent_width, empty_latent_height,
                    return_type="both"):
 
+    # Ensure prompts are valid strings to prevent tokenization errors
+    if positive_prompt is None or (isinstance(positive_prompt, str) and not positive_prompt.strip()):
+        positive_prompt = " "
+    if negative_prompt is None or (isinstance(negative_prompt, str) and not negative_prompt.strip()):
+        negative_prompt = " "
+
     positive_encoded = negative_encoded = refiner_positive_encoded = refiner_negative_encoded = None
 
     # Process base encodings if needed
