@@ -222,10 +222,14 @@ def encode_token_weights_l(model, token_weight_pairs):
     return l_out, None
 
 def encode_token_weights(model, token_weight_pairs, encode_func):
+    # Keep CLIP options aligned with ComfyUI's core encode path so token
+    # tensors are created on the same device as the active text encoder pass.
+    model.cond_stage_model.reset_clip_options()
     if model.layer_idx is not None:
         model.cond_stage_model.set_clip_options({"layer": model.layer_idx})
     
     model_management.load_model_gpu(model.patcher)
+    model.cond_stage_model.set_clip_options({"execution_device": model.patcher.load_device})
     return encode_func(model.cond_stage_model, token_weight_pairs)
 
 def prepareXL(embs_l, embs_g, pooled, clip_balance):
