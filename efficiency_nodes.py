@@ -4014,6 +4014,34 @@ class TSC_ImageOverlay:
         return (base_image,)
 
 ########################################################################################################################
+# TSC Live Preview Node
+class TSC_LivePreview:
+    
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "images": ("IMAGE",),
+            },
+            "hidden": {
+                "prompt": "PROMPT",
+                "extra_pnginfo": "EXTRA_PNGINFO"
+            },
+        }
+    
+    RETURN_TYPES = ("IMAGE",)
+    FUNCTION = "preview_image"
+    OUTPUT_NODE = True
+    CATEGORY = "Efficiency Nodes/Image"
+    
+    def preview_image(self, images, prompt=None, extra_pnginfo=None):
+        # Generate preview using ComfyUI's PreviewImage node
+        preview = PreviewImage().save_images(images, prompt=prompt, extra_pnginfo=extra_pnginfo)["ui"]
+        
+        # Return both the preview for UI and the original images for pass-through
+        return {"ui": preview, "result": (images,)}
+
+########################################################################################################################
 # Noise Sources & Seed Variations
 # https://github.com/shiimizu/ComfyUI_smZNodes
 # https://github.com/chrisgoringe/cg-noise
@@ -4288,6 +4316,7 @@ NODE_CLASS_MAPPINGS = {
     "Manual XY Entry Info": TSC_XYplot_Manual_XY_Entry_Info,
     "Join XY Inputs of Same Type": TSC_XYplot_JoinInputs,
     "Image Overlay": TSC_ImageOverlay,
+    "Live Preview (Eff.)": TSC_LivePreview,
     "Noise Control Script": TSC_Noise_Control_Script,
     "HighRes-Fix Script": TSC_HighRes_Fix,
     "Tiled Upscaler Script": TSC_Tiled_Upscaler,
