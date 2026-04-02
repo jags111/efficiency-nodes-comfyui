@@ -135,7 +135,8 @@ class TSC_EfficientLoader:
                         ascore=None, prompt=None, my_unique_id=None, loader_type="regular"):
 
         # Clean globally stored objects
-        globals_cleanup(prompt)
+        if prompt:
+            globals_cleanup(prompt)
 
         # Create Empty Latent
         latent = torch.zeros([batch_size, 4, empty_latent_height // 8, empty_latent_width // 8]).cpu()
@@ -526,6 +527,7 @@ class TSC_KSampler:
                 # ------------------------------------------------------------------------------------------------------
                 # Store run parameters as strings. Load previous stored samples if all parameters match.
                 latent_image_hash = tensor_to_hash(latent_image["samples"])
+                latent_image_shape = latent_image["samples"].shape
                 positive_hash = tensor_to_hash(positive[0][0])
                 negative_hash = tensor_to_hash(negative[0][0])
                 refiner_positive_hash = tensor_to_hash(refiner_positive[0][0]) if refiner_positive is not None else None
@@ -536,7 +538,7 @@ class TSC_KSampler:
                                     else [original_model_str]
 
                 parameters = [model_identifier] + [seed, steps, cfg, sampler_name, scheduler, positive_hash, negative_hash,
-                                                  latent_image_hash, denoise, sampler_type, add_noise, start_at_step,
+                                                  latent_image_hash, latent_image_shape, denoise, sampler_type, add_noise, start_at_step,
                                                   end_at_step, return_with_leftover_noise, refiner_model, refiner_positive_hash,
                                                   refiner_negative_hash, rng_source, cfg_denoiser, add_seed_noise, m_seed, m_weight]
 
@@ -731,7 +733,8 @@ class TSC_KSampler:
 
         # ---------------------------------------------------------------------------------------------------------------
         # Clean globally stored objects of non-existant nodes
-        globals_cleanup(prompt)
+        if prompt:
+            globals_cleanup(prompt)
 
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         # If not XY Plotting
