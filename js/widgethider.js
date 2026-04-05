@@ -36,7 +36,6 @@ function toggleWidget(node, widget, show = false, suffix = "") {
     node.setSize([node.size[0], newHeight]);
 }
 
-const WIDGET_HEIGHT = 24;
 // Use for Multiline Widget Nodes (aka Efficient Loaders)
 function toggleWidget_2(node, widget, show = false, suffix = "") {
     if (!widget || doesInputWithNameExist(node, widget.name)) return;
@@ -52,8 +51,10 @@ function toggleWidget_2(node, widget, show = false, suffix = "") {
     widget.computeSize = show ? origProps[widget.name].origComputeSize : () => [0, -4];
 
     if (initialized){
-        const adjustment = show ? WIDGET_HEIGHT : -WIDGET_HEIGHT;
-        node.setSize([node.size[0], node.size[1] + adjustment]);
+        // Calculate the new height for the node based on its computeSize method
+        // This properly accounts for font size changes and ensures widgets don't overlap
+        const newHeight = node.computeSize()[1];
+        node.setSize([node.size[0], newHeight]);
     }
 }
 
