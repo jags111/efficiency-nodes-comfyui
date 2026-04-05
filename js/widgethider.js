@@ -30,7 +30,9 @@ function toggleWidget(node, widget, show = false, suffix = "") {
 
     // Recursively handle linked widgets if they exist
     widget.linkedWidgets?.forEach(w => toggleWidget(node, w, ":" + widget.name, show));
+}
 
+function updateSize(node) {
     // Calculate the new height for the node based on its computeSize method
     const newHeight = node.computeSize()[1];
     node.setSize([node.size[0], newHeight]);
@@ -141,6 +143,7 @@ function handleInputModeWidgetsVisibility(node, inputModeValue) {
         const widget = findWidgetByName(node, widgetName);
         toggleWidget(node, widget, false);
     }
+    updateSize(node);
 }
 
 // Handle multi-widget visibilities
@@ -193,6 +196,7 @@ function handleVisibility(node, countValue, node_type) {
             if (thirdWidget) {toggleWidget(node, thirdWidget, false);}
         }
     }
+    updateSize(node);
 }
 
 // Sampler & Scheduler XY input visibility logic
@@ -217,6 +221,7 @@ function handleSamplerSchedulerVisibility(node, countValue, targetParameter) {
             toggleWidget(node, schedulerWidget, false);
         }
     }
+    updateSize(node);
 }
 
 // Handle simple widget visibility based on a count
@@ -227,6 +232,7 @@ function handleWidgetVisibility(node, thresholdValue, widgetNamePrefix, maxCount
             toggleWidget(node, widget, i <= thresholdValue);
         }
     }
+    updateSize(node);
 }
 
 // Disable the 'Ckpt Name+ClipSkip+VAE' option if 'target_ckpt' is "Refiner"
@@ -373,6 +379,7 @@ function handleNoiseControlScript(node, widget) {
             node.seedControl.lastSeedButton.disabled = false; // Enable the button
             toggleWidget(node, node.seedControl.lastSeedButton, true);
         }
+        updateSize(node);
     });
 
 }
@@ -408,6 +415,7 @@ function handleHiResFixScript(node, widget) {
                 node.seedControl.lastSeedButton.disabled = false; // Enable the button
                 toggleWidget(node, node.seedControl.lastSeedButton, true);
             }
+            updateSize(node);
         });
 
         if (findWidgetByName(node, 'use_controlnet').value == '_'){
@@ -445,6 +453,7 @@ function handleHiResFixScript(node, widget) {
         ensureSeedControlExists(() => {
             toggleWidget(node, node.seedControl.lastSeedButton);
             node.seedControl.lastSeedButton.disabled = true; // Disable the button
+            updateSize(node);
         });
         toggleWidget(node, findWidgetByName(node, 'use_controlnet'));
         toggleWidget(node, findWidgetByName(node, 'control_net_name'));
@@ -473,6 +482,7 @@ function handleHiResFixScript(node, widget) {
                 node.seedControl.lastSeedButton.disabled = false; // Enable the button
                 toggleWidget(node, node.seedControl.lastSeedButton, true);
             }
+            updateSize(node);
         });
 
         if (findWidgetByName(node, 'use_controlnet').value == '_'){
@@ -499,6 +509,7 @@ function handleHiResFixScript(node, widget) {
             }
         }
     }
+    updateSize(node);
 }
 
 /// Tiled Upscaler Script Handler
@@ -511,6 +522,7 @@ function handleTiledUpscalerScript(node, widget) {
         toggleWidget(node, findWidgetByName(node, 'tile_controlnet'));
         toggleWidget(node, findWidgetByName(node, 'strength'));
     }
+    updateSize(node);
 }
 
 // LoRA Stacker Handlers
@@ -591,6 +603,7 @@ function handleXYInputLoRAPlotInputMode(node, widget) {
 // XY Input: LoRA Stacks Handlers
 function handleXYInputLoRAStacksNodeState(node, widget) {
     toggleWidget(node, findWidgetByName(node, "node_state"), false);
+    updateSize(node);
 }
 
 // XY Input: Control Net Handlers
